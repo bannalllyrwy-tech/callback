@@ -14,31 +14,28 @@
   <svg style="animation:spin 1s linear infinite" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5865F2" stroke-width="3"><circle cx="12" cy="12" r="10" stroke-opacity="0.2"/><path d="M4 12a8 8 0 018-8"/></svg>
   <p id="status">Authorizing with Discord...</p>
   <script>
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const token = params.get("access_token");
+    var hash = window.location.hash.substring(1);
+    var params = new URLSearchParams(hash);
+    var token = params.get("access_token");
     if (!token) {
       document.getElementById("status").textContent = "No token. Close and try again.";
+    } else if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type: "DISCORD_TOKEN", token: token }, "*");
+      document.getElementById("status").textContent = "Authorized! Closing...";
+      setTimeout(function(){ window.close(); }, 800);
     } else {
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage({ type: "DISCORD_TOKEN", token: token }, "*");
-        document.getElementById("status").textContent = "Authorized! Closing...";
-        setTimeout(() => window.close(), 800);
-      } else {
-        fetch("https://discord.com/api/users/@me", { headers: { Authorization: "Bearer " + token } })
-        .then(r => r.json())
-        .then(user => {
-          localStorage.setItem("discord_user", JSON.stringify({
-            id: user.id,
-            username: user.global_name || user.username,
-            email: user.email || null,
-            avatar: user.avatar ? "https://cdn.discordapp.com/avatars/"+user.id+"/"+user.avatar+".png" : null
-          }));
-          document.getElementById("status").textContent = "Authorized! You can close this window.";
-        });
-      }
+      fetch("https://discord.com/api/users/@me", { headers: { Authorization: "Bearer " + token } })
+      .then(function(r){ return r.json(); })
+      .then(function(user){
+        localStorage.setItem("discord_user", JSON.stringify({
+          id: user.id,
+          username: user.global_name || user.username,
+          email: user.email || null,
+          avatar: user.avatar ? "https://cdn.discordapp.com/avatars/"+user.id+"/"+user.avatar+".png" : null
+        }));
+        document.getElementById("status").textContent = "Authorized! You can close this window.";
+      });
     }
   </script>
 </body>
 </html>
-
